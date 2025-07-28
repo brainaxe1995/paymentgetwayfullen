@@ -2626,49 +2626,86 @@ echo $head;
 
         // Initialize Mollie Components
         function initializeMollieComponents() {
-            // Get Mollie profile ID from WordPress (you'll need to add this)
+            // Get Mollie profile ID - replace with your actual profile ID
             const mollieProfileId = 'pfl_3RkSN1zuPE'; // Replace with your actual profile ID
-            
+
+            // Clear existing components first
+            if (mollieInstance) {
+                Object.keys(mollieComponents).forEach(key => {
+                    if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
+                        try {
+                            mollieComponents[key].unmount();
+                        } catch (e) {
+                            console.log('Component already unmounted:', key);
+                        }
+                    }
+                });
+                mollieComponents = {};
+            }
+
             try {
-                mollieInstance = Mollie(mollieProfileId, { 
-                    locale: 'en_US', 
+                mollieInstance = Mollie(mollieProfileId, {
+                    locale: 'en_US',
                     testmode: true // Set to false for production
                 });
 
                 // Desktop components
-                if (document.getElementById('cardHolder')) {
+                if (document.querySelector('#cardHolder .mollie-component--cardHolder')) {
                     mollieComponents.cardHolder = mollieInstance.createComponent('cardHolder');
                     mollieComponents.cardHolder.mount('#cardHolder .mollie-component--cardHolder');
-                    
+
                     mollieComponents.cardNumber = mollieInstance.createComponent('cardNumber');
                     mollieComponents.cardNumber.mount('#cardNumber .mollie-component--cardNumber');
-                    
+
                     mollieComponents.expiryDate = mollieInstance.createComponent('expiryDate');
                     mollieComponents.expiryDate.mount('#expiryDate .mollie-component--expiryDate');
-                    
+
                     mollieComponents.verificationCode = mollieInstance.createComponent('verificationCode');
                     mollieComponents.verificationCode.mount('#verificationCode .mollie-component--verificationCode');
                 }
 
                 // Mobile components
-                if (document.getElementById('mobile-cardHolder')) {
+                if (document.querySelector('#mobile-cardHolder .mollie-component--cardHolder')) {
                     mollieComponents.mobileCardHolder = mollieInstance.createComponent('cardHolder');
                     mollieComponents.mobileCardHolder.mount('#mobile-cardHolder .mollie-component--cardHolder');
-                    
+
                     mollieComponents.mobileCardNumber = mollieInstance.createComponent('cardNumber');
                     mollieComponents.mobileCardNumber.mount('#mobile-cardNumber .mollie-component--cardNumber');
-                    
+
                     mollieComponents.mobileExpiryDate = mollieInstance.createComponent('expiryDate');
                     mollieComponents.mobileExpiryDate.mount('#mobile-expiryDate .mollie-component--expiryDate');
-                    
+
                     mollieComponents.mobileVerificationCode = mollieInstance.createComponent('verificationCode');
                     mollieComponents.mobileVerificationCode.mount('#mobile-verificationCode .mollie-component--verificationCode');
                 }
 
                 console.log('Mollie Components initialized successfully');
+
+                // Add error handlers
+                addMollieComponentErrorHandlers();
             } catch (error) {
                 console.error('Error initializing Mollie Components:', error);
             }
+        }
+
+        function addMollieComponentErrorHandlers() {
+            Object.keys(mollieComponents).forEach(key => {
+                const component = mollieComponents[key];
+                if (component && typeof component.addEventListener === 'function') {
+                    component.addEventListener('change', event => {
+                        const errorElement = document.querySelector(`#${key.replace('mobile', '').replace('Mobile', '').toLowerCase()}-error`);
+                        if (errorElement) {
+                            if (event.error && event.touched) {
+                                errorElement.textContent = event.error;
+                                errorElement.style.display = 'block';
+                            } else {
+                                errorElement.textContent = '';
+                                errorElement.style.display = 'none';
+                            }
+                        }
+                    });
+                }
+            });
         }
 
         // Video reviews data with masked names
@@ -3131,14 +3168,24 @@ echo $head;
             const paymentMethod = formData.get('payment_method');
             if (paymentMethod && paymentMethod.includes('mollie') && paymentMethod.includes('creditcard') && mollieInstance) {
                 try {
+                    // Validate that all components are properly filled
+                    let hasErrors = false;
+                    Object.keys(mollieComponents).forEach(key => {
+                        if (mollieComponents[key] && typeof mollieComponents[key].addEventListener === 'function') {
+                            // Placeholder for component validation logic
+                        }
+                    });
+
                     const { token, error } = await mollieInstance.createToken();
-                    
                     if (error) {
                         console.error('Mollie token creation error:', error);
-                        showFieldError('payment_method', 'Please check your card details and try again.');
+                        let errorMessage = 'Please check your card details and try again.';
+                        if (error.message) {
+                            errorMessage = error.message;
+                        }
+                        showFieldError('payment_method', errorMessage);
                         return;
                     }
-                    
                     if (token) {
                         formData.set('cardToken', token);
                         console.log('Mollie card token created:', token);
@@ -3342,6 +3389,20 @@ echo $head;
         // Handle payment method change
         function handlePaymentMethodChange(selectedGateway, device) {
             console.log('Payment method changed:', selectedGateway, device);
+
+            // Clear existing Mollie components before creating new ones
+            if (selectedGateway.includes('mollie') && selectedGateway.includes('creditcard')) {
+                Object.keys(mollieComponents).forEach(key => {
+                    if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
+                        try {
+                            mollieComponents[key].unmount();
+                        } catch (e) {
+                            console.log('Component already unmounted:', key);
+                        }
+                    }
+                });
+                mollieComponents = {};
+            }
             
             if (device === 'desktop') {
                 // Hide all desktop payment forms
