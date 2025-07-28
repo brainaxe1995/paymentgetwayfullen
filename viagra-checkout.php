@@ -16,78 +16,6 @@ $hardcoded_fallback_price = 2.49; // Set your desired fallback price here
 $hardcoded_fallback_title = 'Viagra 50mg'; // Set your desired fallback title here
 $hardcoded_fallback_quantity = 1; // Set your desired fallback quantity here
 
-// ===== ORDER BUMP PACKAGES - MOVED FROM FUNCTIONS.PHP =====
-function get_checkout_order_bump_packages() {
-    $products = wc_get_products(array('limit' => 1, 'status' => 'publish'));
-    if (empty($products)) {
-        return array();
-    }
-    
-    $base_product = $products[0];
-    
-    return array(
-        0 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 2,
-            'pills_total' => 8,
-            'title' => 'Viagra – Buy 2 Packs',
-            'discreet_title' => 'Viagra (2 Packs)',
-            'description' => '2 Packs (8 pills total) • Enhanced vitality support',
-            'price' => 3.95,
-            'original_price' => 4.98, // 2 × 2.49
-            'black_market_price' => 5.00,
-            'savings' => 1.03, // 4.98 - 3.95
-            'badge' => 'POPULAR',
-            'badge_color' => 'convert-orange',
-            'free_shipping' => false
-        ),
-        1 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 5,
-            'pills_total' => 20,
-            'title' => 'Viagra – Buy 5 Packs',
-            'discreet_title' => 'Viagra (5 Packs)',
-            'description' => '5 Packs (20 pills total) • Free shipping included',
-            'price' => 4.95,
-            'original_price' => 12.45, // 5 × 2.49
-            'black_market_price' => 13.00,
-            'savings' => 7.50, // 12.45 - 4.95
-            'badge' => 'BEST VALUE',
-            'badge_color' => 'medical-blue',
-            'free_shipping' => true
-        ),
-        2 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 10,
-            'pills_total' => 40,
-            'title' => 'Viagra – Buy 10 Packs',
-            'discreet_title' => 'Viagra (10 Packs)',
-            'description' => '10 Packs (40 pills total) • Free shipping + Free Guide',
-            'price' => 6.95,
-            'original_price' => 24.90, // 10 × 2.49
-            'black_market_price' => 25.00,
-            'savings' => 17.95, // 24.90 - 6.95
-            'badge' => 'MAX SAVINGS',
-            'badge_color' => 'purple-600',
-            'free_shipping' => true
-        ),
-        3 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 20,
-            'pills_total' => 80,
-            'title' => 'Viagra – Buy 20 Packs',
-            'discreet_title' => 'Viagra (20 Packs)',
-            'description' => '20 Packs (80 pills total) • Free shipping + Free Guide + VIP Support',
-            'price' => 9.95,
-            'original_price' => 49.80, // 20 × 2.49
-            'black_market_price' => 50.00,
-            'savings' => 39.85, // 49.80 - 9.95
-            'badge' => 'ULTIMATE DEAL',
-            'badge_color' => 'gradient-to-r from-purple-600 to-pink-600',
-            'free_shipping' => true
-        )
-    );
-}
 
 // Initialize WooCommerce checkout
 $checkout = WC()->checkout();
@@ -137,8 +65,8 @@ function calculate_black_market_price($our_price, $markup_percentage) {
     return $our_price * (1 + ($markup_percentage / 100));
 }
 
-// Get order bump packages from this checkout file
-$order_bump_packages = get_checkout_order_bump_packages();
+// Get order bump packages from functions.php
+$order_bump_packages = get_order_bump_packages();
 
 // Get current cart information for display with discreet naming
 $current_cart_info = array();
@@ -2624,33 +2552,46 @@ echo $head;
         let mollieInstance = null; // Store Mollie instance
         let mollieComponents = {}; // Store Mollie components
 
-        // Initialize Mollie Components
+        // Initialize Mollie Components - COMPLETELY REWRITTEN
         function initializeMollieComponents() {
             // Get Mollie profile ID - replace with your actual profile ID
             const mollieProfileId = 'pfl_3RkSN1zuPE'; // Replace with your actual profile ID
-
-            // Clear existing components first
+            
+            // Destroy existing instance completely
             if (mollieInstance) {
-                Object.keys(mollieComponents).forEach(key => {
-                    if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
-                        try {
-                            mollieComponents[key].unmount();
-                        } catch (e) {
-                            console.log('Component already unmounted:', key);
+                try {
+                    // Unmount all existing components
+                    Object.keys(mollieComponents).forEach(key => {
+                        if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
+                            try {
+                                mollieComponents[key].unmount();
+                            } catch (e) {
+                                console.log('Component unmount error:', e);
+                            }
                         }
-                    }
-                });
+                    });
+                } catch (e) {
+                    console.log('Error during cleanup:', e);
+                }
                 mollieComponents = {};
+                mollieInstance = null;
             }
 
             try {
+                // Create new Mollie instance
                 mollieInstance = Mollie(mollieProfileId, {
                     locale: 'en_US',
                     testmode: true // Set to false for production
                 });
 
-                // Desktop components
-                if (document.querySelector('#cardHolder .mollie-component--cardHolder')) {
+                // Check which components need to be mounted
+                const desktopContainer = document.querySelector('#cardHolder .mollie-component--cardHolder');
+                const mobileContainer = document.querySelector('#mobile-cardHolder .mollie-component--cardHolder');
+
+                // Desktop components - only if container exists and is visible
+                if (desktopContainer && desktopContainer.offsetParent !== null) {
+                    console.log('Mounting desktop Mollie components');
+                    
                     mollieComponents.cardHolder = mollieInstance.createComponent('cardHolder');
                     mollieComponents.cardHolder.mount('#cardHolder .mollie-component--cardHolder');
 
@@ -2664,8 +2605,11 @@ echo $head;
                     mollieComponents.verificationCode.mount('#verificationCode .mollie-component--verificationCode');
                 }
 
-                // Mobile components
-                if (document.querySelector('#mobile-cardHolder .mollie-component--cardHolder')) {
+                // Mobile components - only if container exists and is visible
+                if (mobileContainer && mobileContainer.offsetParent !== null) {
+                    console.log('Mounting mobile Mollie components');
+                    
+                    // Use different component instances for mobile
                     mollieComponents.mobileCardHolder = mollieInstance.createComponent('cardHolder');
                     mollieComponents.mobileCardHolder.mount('#mobile-cardHolder .mollie-component--cardHolder');
 
@@ -2680,6 +2624,7 @@ echo $head;
                 }
 
                 console.log('Mollie Components initialized successfully');
+                console.log('Active components:', Object.keys(mollieComponents));
 
                 // Add error handlers
                 addMollieComponentErrorHandlers();
@@ -2837,6 +2782,49 @@ echo $head;
             }
         }, Math.random() * 8000 + 12000); // Random between 12-20 seconds
 
+        // FIXED: Update cart totals in real-time via AJAX
+        function updateCartTotals(packageId) {
+            const formData = new FormData();
+            formData.append('action', 'update_cart_totals_ajax');
+            formData.append('package_id', packageId);
+            formData.append('security', '<?php echo wp_create_nonce('update-cart-totals'); ?>');
+
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Cart totals updated:', data.data);
+                    // Update the displayed totals
+                    updateDisplayedTotals(data.data);
+                } else {
+                    console.error('Failed to update cart totals:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating cart totals:', error);
+            });
+        }
+
+        // Update displayed totals on the page
+        function updateDisplayedTotals(totals) {
+            // Update desktop totals
+            const desktopSubtotal = document.getElementById('desktop-subtotal');
+            const desktopTotal = document.getElementById('desktop-total');
+
+            if (desktopSubtotal) desktopSubtotal.textContent = `$${totals.subtotal}`;
+            if (desktopTotal) desktopTotal.textContent = `$${totals.total}`;
+
+            // Update mobile totals if they exist
+            const mobileSubtotal = document.getElementById('mobile-subtotal');
+            const mobileTotal = document.getElementById('mobile-total');
+
+            if (mobileSubtotal) mobileSubtotal.textContent = `$${totals.subtotal}`;
+            if (mobileTotal) mobileTotal.textContent = `$${totals.total}`;
+        }
+
         // Desktop order bump selection
         function selectOrderBump(packageId) {
             console.log('Selecting order bump:', packageId);
@@ -2871,7 +2859,10 @@ echo $head;
             
             // Update product display with order bump
             updateProductDisplay(packageId);
-            
+
+            // FIXED: Update cart totals in real-time
+            updateCartTotals(packageId);
+
             // Show reset button
             showResetButton();
             
@@ -2926,7 +2917,10 @@ echo $head;
             
             // Update desktop display too
             updateProductDisplay(packageId);
-            
+
+            // FIXED: Update cart totals in real-time
+            updateCartTotals(packageId);
+
             // Show reset button
             showResetButton();
             
@@ -3390,14 +3384,14 @@ echo $head;
         function handlePaymentMethodChange(selectedGateway, device) {
             console.log('Payment method changed:', selectedGateway, device);
 
-            // Clear existing Mollie components before creating new ones
-            if (selectedGateway.includes('mollie') && selectedGateway.includes('creditcard')) {
+            // Always clear existing Mollie components when changing payment methods
+            if (mollieInstance && Object.keys(mollieComponents).length > 0) {
                 Object.keys(mollieComponents).forEach(key => {
                     if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
                         try {
                             mollieComponents[key].unmount();
                         } catch (e) {
-                            console.log('Component already unmounted:', key);
+                            console.log('Component unmount error:', e);
                         }
                     }
                 });
@@ -3452,9 +3446,10 @@ echo $head;
             
             // Initialize Mollie Components if credit card is selected
             if (selectedGateway.includes('mollie') && selectedGateway.includes('creditcard')) {
+                // Wait longer for DOM to be ready
                 setTimeout(() => {
                     initializeMollieComponents();
-                }, 100);
+                }, 300);
             }
             
             // Update WooCommerce session
