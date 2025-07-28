@@ -722,8 +722,62 @@ function fire_initiate_checkout_event() {
             num_items: <?php echo WC()->cart->get_cart_contents_count(); ?>
         });
     }
+
     </script>
     <?php
+}
+
+// FIXED: Add AJAX handler for real-time cart updates
+add_action('wp_ajax_update_cart_totals_ajax', 'handle_cart_totals_update');
+add_action('wp_ajax_nopriv_update_cart_totals_ajax', 'handle_cart_totals_update');
+function handle_cart_totals_update() {
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['security'], 'update-cart-totals')) {
+        wp_send_json_error('Security check failed');
+        return;
+    }
+
+    $package_id = intval($_POST['package_id']);
+    $packages = get_order_bump_packages();
+
+    if (!isset($packages[$package_id])) {
+        wp_send_json_error('Invalid package');
+        return;
+    }
+
+    $package = $packages[$package_id];
+
+    // Clear cart and add new package
+    WC()->cart->empty_cart();
+    $cart_item_key = WC()->cart->add_to_cart($package['product_id'], $package['quantity']);
+
+    if ($cart_item_key) {
+        // Set custom price
+        add_action('woocommerce_before_calculate_totals', function($cart) use ($package) {
+            if (is_admin() && !defined('DOING_AJAX')) return;
+            foreach ($cart->get_cart() as $cart_item) {
+                $per_item_price = $package['price'] / $package['quantity'];
+                $cart_item['data']->set_price($per_item_price);
+            }
+        }, 10, 1);
+
+        // Calculate totals
+        WC()->cart->calculate_totals();
+
+        // Store package data in session
+        WC()->session->set('selected_package_id', $package_id);
+        WC()->session->set('selected_package_data', $package);
+
+        // Return updated totals
+        wp_send_json_success(array(
+            'subtotal' => number_format($package['price'], 2),
+            'shipping' => '0.00',
+            'total' => number_format($package['price'], 2),
+            'package' => $package
+        ));
+    } else {
+        wp_send_json_error('Failed to add package to cart');
+    }
 }
 
 // AddToCart - Fire using WooCommerce native hook
