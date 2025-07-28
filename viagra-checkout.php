@@ -2626,48 +2626,41 @@ echo $head;
 
         // Initialize Mollie Components
         function initializeMollieComponents() {
-            // Avoid creating components multiple times
-            if (mollieInstance && (mollieComponents.cardHolder || mollieComponents.mobileCardHolder)) {
-                console.log('Mollie Components already initialized');
-                return;
-            }
-
+            // Get Mollie profile ID from WordPress (you'll need to add this)
             const mollieProfileId = 'pfl_3RkSN1zuPE'; // Replace with your actual profile ID
-
+            
             try {
-                if (!mollieInstance) {
-                    mollieInstance = Mollie(mollieProfileId, {
-                        locale: 'en_US',
-                        testmode: true // Set to false for production
-                    });
-                }
+                mollieInstance = Mollie(mollieProfileId, { 
+                    locale: 'en_US', 
+                    testmode: true // Set to false for production
+                });
 
                 // Desktop components
-                if (document.getElementById('cardHolder') && !mollieComponents.cardHolder) {
+                if (document.getElementById('cardHolder')) {
                     mollieComponents.cardHolder = mollieInstance.createComponent('cardHolder');
                     mollieComponents.cardHolder.mount('#cardHolder .mollie-component--cardHolder');
-
+                    
                     mollieComponents.cardNumber = mollieInstance.createComponent('cardNumber');
                     mollieComponents.cardNumber.mount('#cardNumber .mollie-component--cardNumber');
-
+                    
                     mollieComponents.expiryDate = mollieInstance.createComponent('expiryDate');
                     mollieComponents.expiryDate.mount('#expiryDate .mollie-component--expiryDate');
-
+                    
                     mollieComponents.verificationCode = mollieInstance.createComponent('verificationCode');
                     mollieComponents.verificationCode.mount('#verificationCode .mollie-component--verificationCode');
                 }
 
                 // Mobile components
-                if (document.getElementById('mobile-cardHolder') && !mollieComponents.mobileCardHolder) {
+                if (document.getElementById('mobile-cardHolder')) {
                     mollieComponents.mobileCardHolder = mollieInstance.createComponent('cardHolder');
                     mollieComponents.mobileCardHolder.mount('#mobile-cardHolder .mollie-component--cardHolder');
-
+                    
                     mollieComponents.mobileCardNumber = mollieInstance.createComponent('cardNumber');
                     mollieComponents.mobileCardNumber.mount('#mobile-cardNumber .mollie-component--cardNumber');
-
+                    
                     mollieComponents.mobileExpiryDate = mollieInstance.createComponent('expiryDate');
                     mollieComponents.mobileExpiryDate.mount('#mobile-expiryDate .mollie-component--expiryDate');
-
+                    
                     mollieComponents.mobileVerificationCode = mollieInstance.createComponent('verificationCode');
                     mollieComponents.mobileVerificationCode.mount('#mobile-verificationCode .mollie-component--verificationCode');
                 }
