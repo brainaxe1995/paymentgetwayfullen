@@ -1,22 +1,21 @@
 <?php
-/*
-Template Name: Discreet Health Checkout - High-Converting WooCommerce - Free Shipping
-*/
+/* Template Name: Discreet Health Checkout - High-Converting WooCommerce - Free Shipping - Fixed Mollie Support */
 
 // Ensure WooCommerce is active
 if (!class_exists('WooCommerce')) {
     wp_die('WooCommerce is required for this checkout page.');
 }
 
-// ===== PRICING CONFIGURATION =====
+// ===== PRICING CONFIGURATION ===== 
 // Change this percentage to adjust black market pricing across the entire page
 $black_market_markup_percentage = 50; // 50% higher than our price
 
 // ===== HARDCODED PRICE FALLBACK CONFIGURATION =====
 // This price will be used when no cart items are found (direct checkout visits)
-$hardcoded_fallback_price = 29.95; // Set your desired fallback price here
+$hardcoded_fallback_price = 2.49; // Set your desired fallback price here
 $hardcoded_fallback_title = 'Viagra 50mg'; // Set your desired fallback title here
 $hardcoded_fallback_quantity = 1; // Set your desired fallback quantity here
+
 
 // Initialize WooCommerce checkout
 $checkout = WC()->checkout();
@@ -66,74 +65,8 @@ function calculate_black_market_price($our_price, $markup_percentage) {
     return $our_price * (1 + ($markup_percentage / 100));
 }
 
-// Create order bump packages with DISCREET naming and enhanced details - ALL FREE SHIPPING
-$order_bump_packages = array();
-if (!empty($available_products)) {
-    $base_product = $available_products[0];
-    
-    $order_bump_packages = array(
-        1 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 2,
-            'pills_total' => 8, // 4 pills × 2 packs
-            'title' => 'Viagra – Buy 2 Packs',
-            'discreet_title' => 'Viagra (2 Packs)',
-            'description' => '2 Packs (8 pills total) • 4 PILLS PER PACK 50mg • Enhanced vitality support',
-            'price' => 39.95,
-            'original_price' => 56.00,
-            'black_market_price' => 56.00,
-            'savings' => 16.05,
-            'badge' => 'POPULAR',
-            'badge_color' => 'convert-orange',
-            'free_shipping' => true
-        ),
-        2 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 5,
-            'pills_total' => 20, // 4 pills × 5 packs
-            'title' => 'Viagra – Buy 5 Packs',
-            'discreet_title' => 'Viagra (5 Packs)',
-            'description' => '5 Packs (20 pills total) • 4 PILLS PER PACK 50mg • Free shipping included',
-            'price' => 69.00,
-            'original_price' => 105.00,
-            'black_market_price' => 105.00,
-            'savings' => 36.00,
-            'badge' => 'BEST VALUE',
-            'badge_color' => 'medical-blue',
-            'free_shipping' => true
-        ),
-        3 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 10,
-            'pills_total' => 40, // 4 pills × 10 packs
-            'title' => 'Viagra – Buy 10 Packs',
-            'discreet_title' => 'Viagra (10 Packs)',
-            'description' => '10 Packs (40 pills total) • 4 PILLS PER PACK 50mg • Free shipping + Free Guide',
-            'price' => 115.00,
-            'original_price' => 168.00,
-            'black_market_price' => 168.00,
-            'savings' => 53.00,
-            'badge' => 'MAX SAVINGS',
-            'badge_color' => 'purple-600',
-            'free_shipping' => true
-        ),
-        4 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 20,
-            'pills_total' => 80, // 4 pills × 20 packs
-            'title' => 'Viagra – Buy 20 Packs',
-            'discreet_title' => 'Viagra (20 Packs)',
-            'description' => '20 Packs (80 pills total) • 4 PILLS PER PACK 50mg • Free shipping + Free Guide + Priority Support',
-            'price' => 179.00,
-            'original_price' => 252.00,
-            'black_market_price' => 252.00,
-            'savings' => 73.00,
-            'badge' => 'ULTIMATE DEAL',
-            'badge_color' => 'gradient-to-r from-purple-600 to-pink-600',
-            'free_shipping' => true
-        )
-    );
-}
+// Get order bump packages from functions.php
+$order_bump_packages = get_order_bump_packages();
 
 // Get current cart information for display with discreet naming
 $current_cart_info = array();
@@ -144,7 +77,7 @@ if (!empty($cart_items)) {
             'title' => 'Viagra 50mg',
             'discreet_title' => 'Viagra 50mg',
             'quantity' => $cart_item['quantity'],
-            'price' => 29.95,
+            'price' => 2.49,
             'product_id' => $cart_item['product_id']
         );
         break; // Get first item for display
@@ -152,9 +85,6 @@ if (!empty($cart_items)) {
 } else {
     // If cart is empty, use hardcoded fallback or add a default product
     if (!empty($available_products)) {
-        // Option 1: Add product to cart (uncomment if you want this behavior)
-        // WC()->cart->add_to_cart($available_products[0]->get_id(), $hardcoded_fallback_quantity);
-        
         // Option 2: Use hardcoded fallback without modifying cart
         $current_cart_info = array(
             'title' => $hardcoded_fallback_title,
@@ -182,11 +112,11 @@ $initial_total = $initial_subtotal; // No shipping cost
 
 // Block WordPress CSS but keep header functionality
 ob_start();
-    wp_head();
-    $head = ob_get_clean();
-    $head = preg_replace('/<link[^>]*stylesheet[^>]*>/i', '', $head);
-    $head = preg_replace('/<style[^>]*>.*?<\/style>/is', '', $head);
-    echo $head;
+wp_head();
+$head = ob_get_clean();
+$head = preg_replace('/<link[^>]*stylesheet[^>]*>/i', '', $head);
+$head = preg_replace('/<style[^>]*>.*?<\/style>/is', '', $head);
+echo $head;
 ?>
 
 <!DOCTYPE html>
@@ -196,8 +126,9 @@ ob_start();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Checkout - Complete Your Order</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.mollie.com/v1/mollie.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <script>
         tailwind.config = {
             theme: {
@@ -217,7 +148,7 @@ ob_start();
             }
         }
     </script>
-    
+
     <style>
         /* Icon styles for consistent display */
         .icon {
@@ -1120,8 +1051,9 @@ ob_start();
             }
         }
         div#wpadminbar {
-    display: none !important;
-}
+        display: none !important;
+        }
+
 
         /* Delivery Time Badge Styles */
         .delivery-badge {
@@ -1268,16 +1200,100 @@ ob_start();
         .reset-to-original-btn:active {
             transform: translateY(0);
         }
+
+        /* Mollie Components Styling */
+        .mollie-components {
+            background: transparent;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+        }
+
+        .mollie-component {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #fafbfc;
+            height: 48px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .mollie-component:hover {
+            border-color: #9ca3af;
+        }
+
+        .mollie-component:focus-within {
+            border-color: #3CB371;
+            box-shadow: 0 0 0 3px rgba(60, 179, 113, 0.1);
+            background: white;
+        }
+
+        .mollie-component-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .mollie-component iframe {
+            border: none !important;
+            width: 100% !important;
+            height: 20px !important;
+            background: transparent !important;
+        }
+
+        #cardHolder, #cardNumber {
+            margin-bottom: 1rem;
+        }
+
+        #expiryDate, #verificationCode {
+            width: calc(50% - 8px);
+            display: inline-block;
+            vertical-align: top;
+            margin-bottom: 1rem;
+        }
+
+        #expiryDate {
+            margin-right: 16px;
+        }
+
+        .cardToken {
+            display: none;
+        }
+
+        /* Error styling for Mollie components */
+        .mollie-component.error {
+            border-color: #dc2626;
+            background-color: #fef2f2;
+        }
+
+        .mollie-component.error:focus-within {
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        /* Mobile responsive for Mollie */
+        @media (max-width: 480px) {
+            #expiryDate, #verificationCode {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 1rem;
+            }
+        }
     </style>
 </head>
 
 <body <?php body_class(); ?> class="bg-gray-50 text-gray-900 font-inter">
-   <?php wp_body_open(); ?>
+    <?php wp_body_open(); ?>
+
     <!-- Video Reviews Popup -->
     <div class="video-popup-overlay" id="videoPopup" style="display: none">
         <div class="video-popup">
             <button class="popup-close" onclick="closeVideoPopup()">×</button>
-            
+
             <h2 class="text-2xl font-bold text-center mb-4">
                 <svg class="icon icon-lg inline-block text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
@@ -1325,13 +1341,13 @@ ob_start();
             </div>
         </div>
     </div>
-    
-    <!-- Loading Overlay -->
+
+    <!-- Loading Overlay - UPDATED for Mollie redirect -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="bg-white rounded-2xl p-8 text-center">
             <div class="loading-spinner mx-auto mb-4"></div>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Processing Your Order...</h3>
-            <p class="text-gray-600">Please wait while we secure your health solution</p>
+            <h3 class="text-xl font-bold text-gray-900 mb-2" id="loadingTitle">Processing Your Order...</h3>
+            <p class="text-gray-600" id="loadingMessage">Please wait while we secure your health solution</p>
         </div>
     </div>
 
@@ -1350,7 +1366,7 @@ ob_start();
             </div>
         </div>
     </div>
-    
+
     <!-- MOBILE LAYOUT -->
     <div class="mobile-only">
         
@@ -1704,11 +1720,34 @@ ob_start();
                                 <div class="mobile-payment-form-container" id="mobile-payment-form-<?php echo $gateway_id; ?>" style="display: none;">
                                     <div class="p-3 pt-0 border-t border-gray-200">
                                         <?php
-                                        // Render the payment form for this gateway
-                                        if ($gateway->has_fields() || $gateway->get_description()) {
-                                            echo '<div class="payment-box payment_method_' . $gateway_id . '">';
-                                            $gateway->payment_fields();
+                                        // Render custom Mollie Components form for credit card
+                                        if (strpos($gateway_id, 'mollie') !== false && strpos($gateway_id, 'creditcard') !== false) {
+                                            echo '<div class="mollie-components">';
+                                            echo '<div id="mobile-cardHolder">';
+                                            echo '<label class="mollie-component-label">Cardholder Name</label>';
+                                            echo '<div class="mollie-component mollie-component--cardHolder"></div>';
                                             echo '</div>';
+                                            echo '<div id="mobile-cardNumber">';
+                                            echo '<label class="mollie-component-label">Card Number</label>';
+                                            echo '<div class="mollie-component mollie-component--cardNumber"></div>';
+                                            echo '</div>';
+                                            echo '<div id="mobile-expiryDate">';
+                                            echo '<label class="mollie-component-label">Expiry Date</label>';
+                                            echo '<div class="mollie-component mollie-component--expiryDate"></div>';
+                                            echo '</div>';
+                                            echo '<div id="mobile-verificationCode">';
+                                            echo '<label class="mollie-component-label">CVC</label>';
+                                            echo '<div class="mollie-component mollie-component--verificationCode"></div>';
+                                            echo '</div>';
+                                            echo '<input type="hidden" name="cardToken" class="cardToken" />';
+                                            echo '</div>';
+                                        } else {
+                                            // Render the payment form for other gateways
+                                            if ($gateway->has_fields() || $gateway->get_description()) {
+                                                echo '<div class="payment-box payment_method_' . $gateway_id . '">';
+                                                $gateway->payment_fields();
+                                                echo '</div>';
+                                            }
                                         }
                                         ?>
                                     </div>
@@ -2368,11 +2407,34 @@ ob_start();
                                                 <div class="payment-form-container" id="payment-form-<?php echo $gateway_id; ?>" style="display: none;">
                                                     <div class="p-6 pt-0 border-t border-gray-200">
                                                         <?php
-                                                        // Render the payment form for this gateway
-                                                        if ($gateway->has_fields() || $gateway->get_description()) {
-                                                            echo '<div class="payment-box payment_method_' . $gateway_id . '">';
-                                                            $gateway->payment_fields();
+                                                        // Render custom Mollie Components form for credit card
+                                                        if (strpos($gateway_id, 'mollie') !== false && strpos($gateway_id, 'creditcard') !== false) {
+                                                            echo '<div class="mollie-components">';
+                                                            echo '<div id="cardHolder">';
+                                                            echo '<label class="mollie-component-label">Cardholder Name</label>';
+                                                            echo '<div class="mollie-component mollie-component--cardHolder"></div>';
                                                             echo '</div>';
+                                                            echo '<div id="cardNumber">';
+                                                            echo '<label class="mollie-component-label">Card Number</label>';
+                                                            echo '<div class="mollie-component mollie-component--cardNumber"></div>';
+                                                            echo '</div>';
+                                                            echo '<div id="expiryDate">';
+                                                            echo '<label class="mollie-component-label">Expiry Date</label>';
+                                                            echo '<div class="mollie-component mollie-component--expiryDate"></div>';
+                                                            echo '</div>';
+                                                            echo '<div id="verificationCode">';
+                                                            echo '<label class="mollie-component-label">CVC</label>';
+                                                            echo '<div class="mollie-component mollie-component--verificationCode"></div>';
+                                                            echo '</div>';
+                                                            echo '<input type="hidden" name="cardToken" class="cardToken" />';
+                                                            echo '</div>';
+                                                        } else {
+                                                            // Render the payment form for other gateways
+                                                            if ($gateway->has_fields() || $gateway->get_description()) {
+                                                                echo '<div class="payment-box payment_method_' . $gateway_id . '">';
+                                                                $gateway->payment_fields();
+                                                                echo '</div>';
+                                                            }
                                                         }
                                                         ?>
                                                     </div>
@@ -2487,6 +2549,109 @@ ob_start();
 
         let selectedPackageId = null; // Start with no package selected
         let isOrderBumpSelected = false; // Track if order bump is selected
+        let mollieInstance = null; // Store Mollie instance
+        let mollieComponents = {}; // Store Mollie components
+
+        // Initialize Mollie Components - COMPLETELY REWRITTEN
+        function initializeMollieComponents() {
+            // Get Mollie profile ID - replace with your actual profile ID
+            const mollieProfileId = 'pfl_Wtrwpe7ck9'; // Replace with your actual profile ID
+            
+            // Destroy existing instance completely
+            if (mollieInstance) {
+                try {
+                    // Unmount all existing components
+                    Object.keys(mollieComponents).forEach(key => {
+                        if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
+                            try {
+                                mollieComponents[key].unmount();
+                            } catch (e) {
+                                console.log('Component unmount error:', e);
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.log('Error during cleanup:', e);
+                }
+                mollieComponents = {};
+                mollieInstance = null;
+            }
+
+            try {
+                // Create new Mollie instance
+                mollieInstance = Mollie(mollieProfileId, {
+                    locale: 'en_US',
+                    testmode: true // Set to false for production
+                });
+
+                // Check which components need to be mounted
+                const desktopContainer = document.querySelector('#cardHolder .mollie-component--cardHolder');
+                const mobileContainer = document.querySelector('#mobile-cardHolder .mollie-component--cardHolder');
+
+                // Desktop components - only if container exists and is visible
+                if (desktopContainer && desktopContainer.offsetParent !== null) {
+                    console.log('Mounting desktop Mollie components');
+                    
+                    mollieComponents.cardHolder = mollieInstance.createComponent('cardHolder');
+                    mollieComponents.cardHolder.mount('#cardHolder .mollie-component--cardHolder');
+
+                    mollieComponents.cardNumber = mollieInstance.createComponent('cardNumber');
+                    mollieComponents.cardNumber.mount('#cardNumber .mollie-component--cardNumber');
+
+                    mollieComponents.expiryDate = mollieInstance.createComponent('expiryDate');
+                    mollieComponents.expiryDate.mount('#expiryDate .mollie-component--expiryDate');
+
+                    mollieComponents.verificationCode = mollieInstance.createComponent('verificationCode');
+                    mollieComponents.verificationCode.mount('#verificationCode .mollie-component--verificationCode');
+                }
+
+                // Mobile components - only if container exists and is visible
+                if (mobileContainer && mobileContainer.offsetParent !== null) {
+                    console.log('Mounting mobile Mollie components');
+                    
+                    // Use different component instances for mobile
+                    mollieComponents.mobileCardHolder = mollieInstance.createComponent('cardHolder');
+                    mollieComponents.mobileCardHolder.mount('#mobile-cardHolder .mollie-component--cardHolder');
+
+                    mollieComponents.mobileCardNumber = mollieInstance.createComponent('cardNumber');
+                    mollieComponents.mobileCardNumber.mount('#mobile-cardNumber .mollie-component--cardNumber');
+
+                    mollieComponents.mobileExpiryDate = mollieInstance.createComponent('expiryDate');
+                    mollieComponents.mobileExpiryDate.mount('#mobile-expiryDate .mollie-component--expiryDate');
+
+                    mollieComponents.mobileVerificationCode = mollieInstance.createComponent('verificationCode');
+                    mollieComponents.mobileVerificationCode.mount('#mobile-verificationCode .mollie-component--verificationCode');
+                }
+
+                console.log('Mollie Components initialized successfully');
+                console.log('Active components:', Object.keys(mollieComponents));
+
+                // Add error handlers
+                addMollieComponentErrorHandlers();
+            } catch (error) {
+                console.error('Error initializing Mollie Components:', error);
+            }
+        }
+
+        function addMollieComponentErrorHandlers() {
+            Object.keys(mollieComponents).forEach(key => {
+                const component = mollieComponents[key];
+                if (component && typeof component.addEventListener === 'function') {
+                    component.addEventListener('change', event => {
+                        const errorElement = document.querySelector(`#${key.replace('mobile', '').replace('Mobile', '').toLowerCase()}-error`);
+                        if (errorElement) {
+                            if (event.error && event.touched) {
+                                errorElement.textContent = event.error;
+                                errorElement.style.display = 'block';
+                            } else {
+                                errorElement.textContent = '';
+                                errorElement.style.display = 'none';
+                            }
+                        }
+                    });
+                }
+            });
+        }
 
         // Video reviews data with masked names
         const videoReviews = [
@@ -2617,6 +2782,49 @@ ob_start();
             }
         }, Math.random() * 8000 + 12000); // Random between 12-20 seconds
 
+        // FIXED: Update cart totals in real-time via AJAX
+        function updateCartTotals(packageId) {
+            const formData = new FormData();
+            formData.append('action', 'update_cart_totals_ajax');
+            formData.append('package_id', packageId);
+            formData.append('security', '<?php echo wp_create_nonce('update-cart-totals'); ?>');
+
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Cart totals updated:', data.data);
+                    // Update the displayed totals
+                    updateDisplayedTotals(data.data);
+                } else {
+                    console.error('Failed to update cart totals:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating cart totals:', error);
+            });
+        }
+
+        // Update displayed totals on the page
+        function updateDisplayedTotals(totals) {
+            // Update desktop totals
+            const desktopSubtotal = document.getElementById('desktop-subtotal');
+            const desktopTotal = document.getElementById('desktop-total');
+
+            if (desktopSubtotal) desktopSubtotal.textContent = `$${totals.subtotal}`;
+            if (desktopTotal) desktopTotal.textContent = `$${totals.total}`;
+
+            // Update mobile totals if they exist
+            const mobileSubtotal = document.getElementById('mobile-subtotal');
+            const mobileTotal = document.getElementById('mobile-total');
+
+            if (mobileSubtotal) mobileSubtotal.textContent = `$${totals.subtotal}`;
+            if (mobileTotal) mobileTotal.textContent = `$${totals.total}`;
+        }
+
         // Desktop order bump selection
         function selectOrderBump(packageId) {
             console.log('Selecting order bump:', packageId);
@@ -2651,7 +2859,10 @@ ob_start();
             
             // Update product display with order bump
             updateProductDisplay(packageId);
-            
+
+            // FIXED: Update cart totals in real-time
+            updateCartTotals(packageId);
+
             // Show reset button
             showResetButton();
             
@@ -2664,7 +2875,9 @@ ob_start();
             }
             
             // Fire server-side tracking
-            trackPackageSelection(packageId);
+            if (typeof trackPackageSelection === 'function') {
+                trackPackageSelection(packageId);
+            }
         }
 
         // Mobile package selection
@@ -2704,7 +2917,10 @@ ob_start();
             
             // Update desktop display too
             updateProductDisplay(packageId);
-            
+
+            // FIXED: Update cart totals in real-time
+            updateCartTotals(packageId);
+
             // Show reset button
             showResetButton();
             
@@ -2717,7 +2933,9 @@ ob_start();
             }
             
             // Fire server-side tracking
-            trackPackageSelection(packageId);
+            if (typeof trackPackageSelection === 'function') {
+                trackPackageSelection(packageId);
+            }
         }
 
         // Show reset button
@@ -2929,8 +3147,8 @@ ob_start();
             return errors;
         }
 
-        // Submit checkout form via AJAX - FREE SHIPPING
-        function submitCheckoutForm(source) {
+        // FIXED: Submit checkout form via AJAX with Mollie support
+        async function submitCheckoutForm(source) {
             console.log('Submitting checkout form from:', source);
             
             // Clear previous errors
@@ -2939,6 +3157,39 @@ ob_start();
             // Get form data
             const form = document.getElementById(source === 'mobile' ? 'mobile-checkout-form' : 'desktop-checkout-form');
             const formData = new FormData(form);
+            
+            // Check if Mollie credit card is selected and get card token
+            const paymentMethod = formData.get('payment_method');
+            if (paymentMethod && paymentMethod.includes('mollie') && paymentMethod.includes('creditcard') && mollieInstance) {
+                try {
+                    // Validate that all components are properly filled
+                    let hasErrors = false;
+                    Object.keys(mollieComponents).forEach(key => {
+                        if (mollieComponents[key] && typeof mollieComponents[key].addEventListener === 'function') {
+                            // Placeholder for component validation logic
+                        }
+                    });
+
+                    const { token, error } = await mollieInstance.createToken();
+                    if (error) {
+                        console.error('Mollie token creation error:', error);
+                        let errorMessage = 'Please check your card details and try again.';
+                        if (error.message) {
+                            errorMessage = error.message;
+                        }
+                        showFieldError('payment_method', errorMessage);
+                        return;
+                    }
+                    if (token) {
+                        formData.set('cardToken', token);
+                        console.log('Mollie card token created:', token);
+                    }
+                } catch (error) {
+                    console.error('Error creating Mollie token:', error);
+                    showFieldError('payment_method', 'Error processing card details. Please try again.');
+                    return;
+                }
+            }
             
             // Add selected package if any
             if (selectedPackageId) {
@@ -2969,6 +3220,8 @@ ob_start();
             
             // Show loading overlay
             const loadingOverlay = document.getElementById('loadingOverlay');
+            const loadingTitle = document.getElementById('loadingTitle');
+            const loadingMessage = document.getElementById('loadingMessage');
             const submitButtons = document.querySelectorAll('#mobile-submit-btn, #desktop-submit-btn');
             
             loadingOverlay.classList.add('active');
@@ -2976,6 +3229,15 @@ ob_start();
                 btn.disabled = true;
                 btn.innerHTML = '⏳ Processing Your Order...';
             });
+            
+            // Update loading message for payment gateway
+            if (paymentMethod && paymentMethod.includes('mollie')) {
+                loadingTitle.textContent = 'Redirecting to Payment...';
+                loadingMessage.textContent = 'You will be redirected to complete your payment securely';
+            } else {
+                loadingTitle.textContent = 'Processing Your Order...';
+                loadingMessage.textContent = 'Please wait while we secure your health solution';
+            }
             
             // Submit via AJAX
             fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
@@ -2987,12 +3249,16 @@ ob_start();
                 console.log('Checkout response:', data);
                 
                 if (data.success) {
-                    // Success - redirect to success page
+                    // FIXED: Handle redirect URLs properly for Mollie
                     if (data.data.redirect_url) {
+                        // For Mollie and other redirect-based gateways
+                        console.log('Redirecting to:', data.data.redirect_url);
                         window.location.href = data.data.redirect_url;
                     } else if (data.data.order_id) {
+                        // Direct success - go to success page
                         window.location.href = '<?php echo home_url('/checkout-success/'); ?>?order_id=' + data.data.order_id;
                     } else {
+                        // Fallback success page
                         window.location.href = '<?php echo home_url('/checkout-success/'); ?>';
                     }
                 } else {
@@ -3008,7 +3274,8 @@ ob_start();
                             showFieldError(field, message);
                         }
                     } else {
-                        alert('Checkout failed: ' + (data.data || 'Unknown error'));
+                        const errorMsg = data.data?.message || data.message || 'Unknown error occurred';
+                        alert('Checkout failed: ' + errorMsg);
                     }
                 }
             })
@@ -3116,6 +3383,20 @@ ob_start();
         // Handle payment method change
         function handlePaymentMethodChange(selectedGateway, device) {
             console.log('Payment method changed:', selectedGateway, device);
+
+            // Always clear existing Mollie components when changing payment methods
+            if (mollieInstance && Object.keys(mollieComponents).length > 0) {
+                Object.keys(mollieComponents).forEach(key => {
+                    if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
+                        try {
+                            mollieComponents[key].unmount();
+                        } catch (e) {
+                            console.log('Component unmount error:', e);
+                        }
+                    }
+                });
+                mollieComponents = {};
+            }
             
             if (device === 'desktop') {
                 // Hide all desktop payment forms
@@ -3161,6 +3442,14 @@ ob_start();
                 if (selectedWrapper) {
                     selectedWrapper.classList.add('selected');
                 }
+            }
+            
+            // Initialize Mollie Components if credit card is selected
+            if (selectedGateway.includes('mollie') && selectedGateway.includes('creditcard')) {
+                // Wait longer for DOM to be ready
+                setTimeout(() => {
+                    initializeMollieComponents();
+                }, 300);
             }
             
             // Update WooCommerce session
@@ -3217,12 +3506,8 @@ ob_start();
             }
         });
     </script>
-
 </body>
 
- <?php
+<?php wp_footer(); ?>
 
-    wp_footer();
-
-?>
 </html>
