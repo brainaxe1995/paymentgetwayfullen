@@ -1,12 +1,60 @@
 <?php
 /**
  * WooCommerce High-Converting Checkout Functions with Native Meta Pixel Integration and Mollie Support
- * Add this to your theme's functions.php file
  */
 
 // Prevent direct access
 if (!defined('ABSPATH')) {
     exit;
+}
+// Add Mollie settings to WordPress admin
+add_action('admin_menu', 'add_mollie_settings_page');
+function add_mollie_settings_page() {
+    add_options_page(
+        'Mollie Settings',
+        'Mollie Settings',
+        'manage_options',
+        'mollie-settings',
+        'mollie_settings_page'
+    );
+}
+
+function mollie_settings_page() {
+    if (isset($_POST['submit'])) {
+        update_option('mollie_profile_id', sanitize_text_field($_POST['mollie_profile_id']));
+        update_option('mollie_testmode', sanitize_text_field($_POST['mollie_testmode']));
+        echo '<div class="notice notice-success"><p>Mollie settings saved!</p></div>';
+    }
+    
+    $profile_id = get_option('mollie_profile_id', 'pfl_3RkSN1zuPE');
+    $testmode = get_option('mollie_testmode', 'true');
+    ?>
+    <div class="wrap">
+        <h1>Mollie Settings</h1>
+        <form method="post" action="">
+            <table class="form-table">
+                <tr>
+                    <th scope="row">Mollie Profile ID</th>
+                    <td>
+                        <input type="text" name="mollie_profile_id" value="<?php echo esc_attr($profile_id); ?>" class="regular-text" />
+                        <p class="description">Enter your Mollie Profile ID (starts with pfl_)</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Test Mode</th>
+                    <td>
+                        <select name="mollie_testmode">
+                            <option value="true" <?php selected($testmode, 'true'); ?>>Enabled</option>
+                            <option value="false" <?php selected($testmode, 'false'); ?>>Disabled</option>
+                        </select>
+                        <p class="description">Enable test mode for development</p>
+                    </td>
+                </tr>
+            </table>
+            <?php submit_button(); ?>
+        </form>
+    </div>
+    <?php
 }
 
 /**
@@ -89,7 +137,7 @@ function handle_ajax_checkout_processing() {
         // For Mollie, we need to validate fields differently
         if (method_exists($gateway, 'validate_fields')) {
             // Store POST data temporarily for gateway validation
-            $original_post = $_POST;
+            // $original_post = $_POST; // Not needed
             
             // Call validation and capture any errors
             ob_start();
@@ -337,77 +385,6 @@ function handle_ajax_checkout_processing() {
 }
 
 // Function to get order bump packages - FIXED: Single source of truth
-function get_order_bump_packages() {
-    $products = wc_get_products(array('limit' => 1, 'status' => 'publish'));
-    if (empty($products)) {
-        return array();
-    }
-
-    $base_product = $products[0];
-
-    return array(
-        0 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 2,
-            'pills_total' => 8,
-            'title' => 'Viagra – Buy 2 Packs',
-            'discreet_title' => 'Viagra (2 Packs)',
-            'description' => '2 Packs (8 pills total) • Enhanced vitality support',
-            'price' => 3.95,
-            'original_price' => 4.98, // 2 × 2.49
-            'black_market_price' => 5.00,
-            'savings' => 1.03, // 4.98 - 3.95
-            'badge' => 'POPULAR',
-            'badge_color' => 'convert-orange',
-            'free_shipping' => false
-        ),
-        1 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 5,
-            'pills_total' => 20,
-            'title' => 'Viagra – Buy 5 Packs',
-            'discreet_title' => 'Viagra (5 Packs)',
-            'description' => '5 Packs (20 pills total) • Free shipping included',
-            'price' => 4.95,
-            'original_price' => 12.45, // 5 × 2.49
-            'black_market_price' => 13.00,
-            'savings' => 7.50, // 12.45 - 4.95
-            'badge' => 'BEST VALUE',
-            'badge_color' => 'medical-blue',
-            'free_shipping' => true
-        ),
-        2 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 10,
-            'pills_total' => 40,
-            'title' => 'Viagra – Buy 10 Packs',
-            'discreet_title' => 'Viagra (10 Packs)',
-            'description' => '10 Packs (40 pills total) • Free shipping + Free Guide',
-            'price' => 6.95,
-            'original_price' => 24.90, // 10 × 2.49
-            'black_market_price' => 25.00,
-            'savings' => 17.95, // 24.90 - 6.95
-            'badge' => 'MAX SAVINGS',
-            'badge_color' => 'purple-600',
-            'free_shipping' => true
-        ),
-        3 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 20,
-            'pills_total' => 80,
-            'title' => 'Viagra – Buy 20 Packs',
-            'discreet_title' => 'Viagra (20 Packs)',
-            'description' => '20 Packs (80 pills total) • Free shipping + Free Guide + VIP Support',
-            'price' => 9.95,
-            'original_price' => 49.80, // 20 × 2.49
-            'black_market_price' => 50.00,
-            'savings' => 39.85, // 49.80 - 9.95
-            'badge' => 'ULTIMATE DEAL',
-            'badge_color' => 'gradient-to-r from-purple-600 to-pink-600',
-            'free_shipping' => true
-        )
-    );
-}
 
 // Display package information in admin order details
 add_action('woocommerce_admin_order_data_after_billing_address', 'display_package_info_in_admin');
@@ -736,7 +713,11 @@ function handle_cart_totals_update() {
         wp_send_json_error('Security check failed');
         return;
     }
-
+    // Get order bump packages from checkout page
+    if (!function_exists('get_order_bump_packages')) {
+        wp_send_json_error('Order bump packages not available');
+        return;
+    }
     $package_id = intval($_POST['package_id']);
     $packages = get_order_bump_packages();
 

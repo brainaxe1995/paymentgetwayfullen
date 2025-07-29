@@ -2,6 +2,80 @@
 /* Template Name: Discreet Health Checkout - High-Converting WooCommerce - Free Shipping - Fixed Mollie Support */
 
 // Ensure WooCommerce is active
+// ===== ORDER BUMP PACKAGES CONFIGURATION =====
+// Move this from functions.php to checkout page for better control
+function get_order_bump_packages() {
+    $products = wc_get_products(array('limit' => 1, 'status' => 'publish'));
+    if (empty($products)) {
+        return array();
+    }
+
+    $base_product = $products[0];
+
+    return array(
+        0 => array(
+            'product_id' => $base_product->get_id(),
+            'quantity' => 2,
+            'pills_total' => 8,
+            'title' => 'Viagra – Buy 2 Packs',
+            'discreet_title' => 'Viagra (2 Packs)',
+            'description' => '2 Packs (8 pills total) • Enhanced vitality support',
+            'price' => 3.95,
+            'original_price' => 4.98,
+            'black_market_price' => 5.00,
+            'savings' => 1.03,
+            'badge' => 'POPULAR',
+            'badge_color' => 'convert-orange',
+            'free_shipping' => false
+        ),
+        1 => array(
+            'product_id' => $base_product->get_id(),
+            'quantity' => 5,
+            'pills_total' => 20,
+            'title' => 'Viagra – Buy 5 Packs',
+            'discreet_title' => 'Viagra (5 Packs)',
+            'description' => '5 Packs (20 pills total) • Free shipping included',
+            'price' => 4.95,
+            'original_price' => 12.45,
+            'black_market_price' => 13.00,
+            'savings' => 7.50,
+            'badge' => 'BEST VALUE',
+            'badge_color' => 'medical-blue',
+            'free_shipping' => true
+        ),
+        2 => array(
+            'product_id' => $base_product->get_id(),
+            'quantity' => 10,
+            'pills_total' => 40,
+            'title' => 'Viagra – Buy 10 Packs',
+            'discreet_title' => 'Viagra (10 Packs)',
+            'description' => '10 Packs (40 pills total) • Free shipping + Free Guide',
+            'price' => 6.95,
+            'original_price' => 24.90,
+            'black_market_price' => 25.00,
+            'savings' => 17.95,
+            'badge' => 'MAX SAVINGS',
+            'badge_color' => 'purple-600',
+            'free_shipping' => true
+        ),
+        3 => array(
+            'product_id' => $base_product->get_id(),
+            'quantity' => 20,
+            'pills_total' => 80,
+            'title' => 'Viagra – Buy 20 Packs',
+            'discreet_title' => 'Viagra (20 Packs)',
+            'description' => '20 Packs (80 pills total) • Free shipping + Free Guide + VIP Support',
+            'price' => 9.95,
+
+            'original_price' => 49.80,
+            'black_market_price' => 50.00,
+            'savings' => 39.85,
+            'badge' => 'ULTIMATE DEAL',
+            'badge_color' => 'gradient-to-r from-purple-600 to-pink-600',
+            'free_shipping' => true
+        )
+    );
+}
 if (!class_exists('WooCommerce')) {
     wp_die('WooCommerce is required for this checkout page.');
 }
@@ -126,9 +200,7 @@ echo $head;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Secure Checkout - Complete Your Order</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://js.mollie.com/v1/mollie.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
     <script>
         tailwind.config = {
             theme: {
@@ -1722,25 +1794,8 @@ echo $head;
                                         <?php
                                         // Render custom Mollie Components form for credit card
                                         if (strpos($gateway_id, 'mollie') !== false && strpos($gateway_id, 'creditcard') !== false) {
-                                            echo '<div class="mollie-components">';
-                                            echo '<div id="mobile-cardHolder">';
-                                            echo '<label class="mollie-component-label">Cardholder Name</label>';
-                                            echo '<div class="mollie-component mollie-component--cardHolder"></div>';
-                                            echo '</div>';
-                                            echo '<div id="mobile-cardNumber">';
-                                            echo '<label class="mollie-component-label">Card Number</label>';
-                                            echo '<div class="mollie-component mollie-component--cardNumber"></div>';
-                                            echo '</div>';
-                                            echo '<div id="mobile-expiryDate">';
-                                            echo '<label class="mollie-component-label">Expiry Date</label>';
-                                            echo '<div class="mollie-component mollie-component--expiryDate"></div>';
-                                            echo '</div>';
-                                            echo '<div id="mobile-verificationCode">';
-                                            echo '<label class="mollie-component-label">CVC</label>';
-                                            echo '<div class="mollie-component mollie-component--verificationCode"></div>';
-                                            echo '</div>';
-                                            echo '<input type="hidden" name="cardToken" class="cardToken" />';
-                                            echo '</div>';
+                                            echo '<div id="mollie-card-mobile" class="mollie-card-container"></div>';
+                                            echo '<input type="hidden" name="cardToken" id="mobile-cardToken" />';
                                         } else {
                                             // Render the payment form for other gateways
                                             if ($gateway->has_fields() || $gateway->get_description()) {
@@ -2409,25 +2464,8 @@ echo $head;
                                                         <?php
                                                         // Render custom Mollie Components form for credit card
                                                         if (strpos($gateway_id, 'mollie') !== false && strpos($gateway_id, 'creditcard') !== false) {
-                                                            echo '<div class="mollie-components">';
-                                                            echo '<div id="cardHolder">';
-                                                            echo '<label class="mollie-component-label">Cardholder Name</label>';
-                                                            echo '<div class="mollie-component mollie-component--cardHolder"></div>';
-                                                            echo '</div>';
-                                                            echo '<div id="cardNumber">';
-                                                            echo '<label class="mollie-component-label">Card Number</label>';
-                                                            echo '<div class="mollie-component mollie-component--cardNumber"></div>';
-                                                            echo '</div>';
-                                                            echo '<div id="expiryDate">';
-                                                            echo '<label class="mollie-component-label">Expiry Date</label>';
-                                                            echo '<div class="mollie-component mollie-component--expiryDate"></div>';
-                                                            echo '</div>';
-                                                            echo '<div id="verificationCode">';
-                                                            echo '<label class="mollie-component-label">CVC</label>';
-                                                            echo '<div class="mollie-component mollie-component--verificationCode"></div>';
-                                                            echo '</div>';
-                                                            echo '<input type="hidden" name="cardToken" class="cardToken" />';
-                                                            echo '</div>';
+                                                            echo '<div id="mollie-card-desktop" class="mollie-card-container"></div>';
+                                                            echo '<input type="hidden" name="cardToken" id="desktop-cardToken" />';
                                                         } else {
                                                             // Render the payment form for other gateways
                                                             if ($gateway->has_fields() || $gateway->get_description()) {
@@ -2528,6 +2566,8 @@ echo $head;
         </div>
     </div>
 
+    <!-- Load Mollie.js after DOM is ready -->
+    <script src="https://js.mollie.com/v1/mollie.js"></script>
     <script>
         // PHP data for JavaScript - ALL FREE SHIPPING
         const shippingCost = 0.00; // FREE SHIPPING
@@ -2550,110 +2590,65 @@ echo $head;
         let selectedPackageId = null; // Start with no package selected
         let isOrderBumpSelected = false; // Track if order bump is selected
         let mollieInstance = null; // Store Mollie instance
-        let mollieComponents = {}; // Store Mollie components
+        let mollieCardComponent = null; // Store single card component
 
-        // Initialize Mollie Components - COMPLETELY REWRITTEN
+        // Video reviews data with masked names
+        // Initialize Mollie Components - FIXED Implementation
         function initializeMollieComponents() {
-            // Get Mollie profile ID - replace with your actual profile ID
-            const mollieProfileId = 'pfl_3RkSN1zuPE'; // Replace with your actual profile ID
-            
-            // Destroy existing instance completely
-            if (mollieInstance) {
+            console.log('Initializing Mollie Components...');
+
+            // Clean up existing components
+            if (mollieCardComponent) {
                 try {
-                    // Unmount all existing components
-                    Object.keys(mollieComponents).forEach(key => {
-                        if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
-                            try {
-                                mollieComponents[key].unmount();
-                            } catch (e) {
-                                console.log('Component unmount error:', e);
-                            }
-                        }
-                    });
+                    mollieCardComponent.unmount();
                 } catch (e) {
-                    console.log('Error during cleanup:', e);
+                    console.log('Component unmount error:', e);
                 }
-                mollieComponents = {};
-                mollieInstance = null;
+                mollieCardComponent = null;
             }
 
+            // Get Mollie profile ID from PHP
+            const mollieProfileId = '<?php echo get_option('mollie_profile_id', 'pfl_3RkSN1zuPE'); ?>';
             try {
-                // Create new Mollie instance
+                // Initialize Mollie instance
                 mollieInstance = Mollie(mollieProfileId, {
                     locale: 'en_US',
-                    testmode: true // Set to false for production
+                    testmode: <?php echo get_option('mollie_testmode', 'true') === 'true' ? 'true' : 'false'; ?>
                 });
 
-                // Check which components need to be mounted
-                const desktopContainer = document.querySelector('#cardHolder .mollie-component--cardHolder');
-                const mobileContainer = document.querySelector('#mobile-cardHolder .mollie-component--cardHolder');
-
-                // Desktop components - only if container exists and is visible
+                // Determine which container to use based on visibility
+                let targetContainer = null;
+                const desktopContainer = document.querySelector('#mollie-card-desktop');
+                const mobileContainer = document.querySelector('#mollie-card-mobile');
                 if (desktopContainer && desktopContainer.offsetParent !== null) {
-                    console.log('Mounting desktop Mollie components');
-                    
-                    mollieComponents.cardHolder = mollieInstance.createComponent('cardHolder');
-                    mollieComponents.cardHolder.mount('#cardHolder .mollie-component--cardHolder');
-
-                    mollieComponents.cardNumber = mollieInstance.createComponent('cardNumber');
-                    mollieComponents.cardNumber.mount('#cardNumber .mollie-component--cardNumber');
-
-                    mollieComponents.expiryDate = mollieInstance.createComponent('expiryDate');
-                    mollieComponents.expiryDate.mount('#expiryDate .mollie-component--expiryDate');
-
-                    mollieComponents.verificationCode = mollieInstance.createComponent('verificationCode');
-                    mollieComponents.verificationCode.mount('#verificationCode .mollie-component--verificationCode');
+                    targetContainer = '#mollie-card-desktop';
+                } else if (mobileContainer && mobileContainer.offsetParent !== null) {
+                    targetContainer = '#mollie-card-mobile';
                 }
 
-                // Mobile components - only if container exists and is visible
-                if (mobileContainer && mobileContainer.offsetParent !== null) {
-                    console.log('Mounting mobile Mollie components');
-                    
-                    // Use different component instances for mobile
-                    mollieComponents.mobileCardHolder = mollieInstance.createComponent('cardHolder');
-                    mollieComponents.mobileCardHolder.mount('#mobile-cardHolder .mollie-component--cardHolder');
-
-                    mollieComponents.mobileCardNumber = mollieInstance.createComponent('cardNumber');
-                    mollieComponents.mobileCardNumber.mount('#mobile-cardNumber .mollie-component--cardNumber');
-
-                    mollieComponents.mobileExpiryDate = mollieInstance.createComponent('expiryDate');
-                    mollieComponents.mobileExpiryDate.mount('#mobile-expiryDate .mollie-component--expiryDate');
-
-                    mollieComponents.mobileVerificationCode = mollieInstance.createComponent('verificationCode');
-                    mollieComponents.mobileVerificationCode.mount('#mobile-verificationCode .mollie-component--verificationCode');
+                if (targetContainer) {
+                    console.log('Mounting Mollie card component to:', targetContainer);
+                    mollieCardComponent = mollieInstance.createComponent('card', {
+                        styles: {
+                            base: {
+                                backgroundColor: '#fafbfc',
+                                fontSize: '16px',
+                                color: '#374151',
+                                '::placeholder': { color: '#9ca3af' }
+                            },
+                            valid: { color: '#059669' },
+                            invalid: { color: '#dc2626' }
+                        }
+                    });
+                    mollieCardComponent.mount(targetContainer);
+                    console.log('Mollie card component mounted successfully');
+                } else {
+                    console.log('No suitable container found for Mollie components');
                 }
-
-                console.log('Mollie Components initialized successfully');
-                console.log('Active components:', Object.keys(mollieComponents));
-
-                // Add error handlers
-                addMollieComponentErrorHandlers();
             } catch (error) {
                 console.error('Error initializing Mollie Components:', error);
             }
         }
-
-        function addMollieComponentErrorHandlers() {
-            Object.keys(mollieComponents).forEach(key => {
-                const component = mollieComponents[key];
-                if (component && typeof component.addEventListener === 'function') {
-                    component.addEventListener('change', event => {
-                        const errorElement = document.querySelector(`#${key.replace('mobile', '').replace('Mobile', '').toLowerCase()}-error`);
-                        if (errorElement) {
-                            if (event.error && event.touched) {
-                                errorElement.textContent = event.error;
-                                errorElement.style.display = 'block';
-                            } else {
-                                errorElement.textContent = '';
-                                errorElement.style.display = 'none';
-                            }
-                        }
-                    });
-                }
-            });
-        }
-
-        // Video reviews data with masked names
         const videoReviews = [
             { title: "Mar*** from Texas", description: "My confidence is back completely!", rating: 5 },
             { title: "Dav*** from London", description: "Works perfectly every time!", rating: 5 },
@@ -3161,19 +3156,25 @@ echo $head;
             // Check if Mollie credit card is selected and get card token
             const paymentMethod = formData.get('payment_method');
             if (paymentMethod && paymentMethod.includes('mollie') && paymentMethod.includes('creditcard') && mollieInstance) {
+                console.log('Processing Mollie payment...');
                 try {
-                    // Validate that all components are properly filled
-                    let hasErrors = false;
-                    Object.keys(mollieComponents).forEach(key => {
-                        if (mollieComponents[key] && typeof mollieComponents[key].addEventListener === 'function') {
-                            // Placeholder for component validation logic
-                        }
-                    });
-
                     const { token, error } = await mollieInstance.createToken();
                     if (error) {
                         console.error('Mollie token creation error:', error);
-                        let errorMessage = 'Please check your card details and try again.';
+                        let errorMessage = 'Please fill in all card details correctly.';
+                        if (error.field) {
+                            switch (error.field) {
+                                case 'cardNumber':
+                                    errorMessage = 'Please enter a valid card number.';
+                                    break;
+                                case 'expiryDate':
+                                    errorMessage = 'Please enter a valid expiry date.';
+                                    break;
+                                case 'verificationCode':
+                                    errorMessage = 'Please enter a valid CVC code.';
+                                    break;
+                            }
+                        }
                         if (error.message) {
                             errorMessage = error.message;
                         }
@@ -3182,6 +3183,8 @@ echo $head;
                     }
                     if (token) {
                         formData.set('cardToken', token);
+                        const tokenField = source === 'mobile' ? document.getElementById('mobile-cardToken') : document.getElementById('desktop-cardToken');
+                        if (tokenField) tokenField.value = token;
                         console.log('Mollie card token created:', token);
                     }
                 } catch (error) {
@@ -3385,25 +3388,14 @@ echo $head;
             console.log('Payment method changed:', selectedGateway, device);
 
             // Always clear existing Mollie components when changing payment methods
-            if (mollieInstance && Object.keys(mollieComponents).length > 0) {
-                Object.keys(mollieComponents).forEach(key => {
-                    if (mollieComponents[key] && typeof mollieComponents[key].unmount === 'function') {
-                        try {
-                            mollieComponents[key].unmount();
-                        } catch (e) {
-                            console.log('Component unmount error:', e);
-                        }
-                    }
-                });
-                mollieComponents = {};
+            if (mollieCardComponent) {
+                try {
+                    mollieCardComponent.unmount();
+                } catch (e) {
+                    console.log('Card component unmount error:', e);
+                }
+                mollieCardComponent = null;
             }
-            
-            if (device === 'desktop') {
-                // Hide all desktop payment forms
-                document.querySelectorAll('.payment-form-container').forEach(container => {
-                    container.style.display = 'none';
-                });
-                
                 // Remove selected class from all wrappers
                 document.querySelectorAll('.payment-method-wrapper').forEach(wrapper => {
                     wrapper.classList.remove('selected');
@@ -3449,7 +3441,7 @@ echo $head;
                 // Wait longer for DOM to be ready
                 setTimeout(() => {
                     initializeMollieComponents();
-                }, 300);
+                }, 500);
             }
             
             // Update WooCommerce session
@@ -3504,6 +3496,13 @@ echo $head;
                     content_category: 'checkout'
                 });
             }
+            // Initialize Mollie if needed
+            setTimeout(() => {
+                const selectedPaymentMethod = document.querySelector("input[name="payment_method"]:checked");
+                if (selectedPaymentMethod && selectedPaymentMethod.value.includes("mollie") && selectedPaymentMethod.value.includes("creditcard")) {
+                    initializeMollieComponents();
+                }
+            }, 1000);
         });
     </script>
 </body>
