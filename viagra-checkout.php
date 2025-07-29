@@ -2730,6 +2730,26 @@ echo $head;
             });
         }
 
+        function addMollieComponentErrorHandlers() {
+            Object.keys(mollieComponents).forEach(key => {
+                const component = mollieComponents[key];
+                if (component && typeof component.addEventListener === 'function') {
+                    component.addEventListener('change', event => {
+                        const errorElement = document.querySelector(`#${key.replace('mobile', '').replace('Mobile', '').toLowerCase()}-error`);
+                        if (errorElement) {
+                            if (event.error && event.touched) {
+                                errorElement.textContent = event.error;
+                                errorElement.style.display = 'block';
+                            } else {
+                                errorElement.textContent = '';
+                                errorElement.style.display = 'none';
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
         // Video reviews data with masked names
         const videoReviews = [
             { title: "Mar*** from Texas", description: "My confidence is back completely!", rating: 5 },
@@ -2858,6 +2878,49 @@ echo $head;
                 showPurchaseNotification();
             }
         }, Math.random() * 8000 + 12000); // Random between 12-20 seconds
+
+        // FIXED: Update cart totals in real-time via AJAX
+        function updateCartTotals(packageId) {
+            const formData = new FormData();
+            formData.append('action', 'update_cart_totals_ajax');
+            formData.append('package_id', packageId);
+            formData.append('security', '<?php echo wp_create_nonce('update-cart-totals'); ?>');
+
+            fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Cart totals updated:', data.data);
+                    // Update the displayed totals
+                    updateDisplayedTotals(data.data);
+                } else {
+                    console.error('Failed to update cart totals:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating cart totals:', error);
+            });
+        }
+
+        // Update displayed totals on the page
+        function updateDisplayedTotals(totals) {
+            // Update desktop totals
+            const desktopSubtotal = document.getElementById('desktop-subtotal');
+            const desktopTotal = document.getElementById('desktop-total');
+
+            if (desktopSubtotal) desktopSubtotal.textContent = `$${totals.subtotal}`;
+            if (desktopTotal) desktopTotal.textContent = `$${totals.total}`;
+
+            // Update mobile totals if they exist
+            const mobileSubtotal = document.getElementById('mobile-subtotal');
+            const mobileTotal = document.getElementById('mobile-total');
+
+            if (mobileSubtotal) mobileSubtotal.textContent = `$${totals.subtotal}`;
+            if (mobileTotal) mobileTotal.textContent = `$${totals.total}`;
+        }
 
         // FIXED: Update cart totals in real-time via AJAX
         function updateCartTotals(packageId) {
