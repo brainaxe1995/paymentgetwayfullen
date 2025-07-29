@@ -336,77 +336,11 @@ function handle_ajax_checkout_processing() {
     }
 }
 
-// Function to get order bump packages - FIXED: Single source of truth
 function get_order_bump_packages() {
-    $products = wc_get_products(array('limit' => 1, 'status' => 'publish'));
-    if (empty($products)) {
-        return array();
+    if (function_exists('get_checkout_order_bump_packages')) {
+        return get_checkout_order_bump_packages();
     }
-
-    $base_product = $products[0];
-
-    return array(
-        0 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 2,
-            'pills_total' => 8,
-            'title' => 'Viagra – Buy 2 Packs',
-            'discreet_title' => 'Viagra (2 Packs)',
-            'description' => '2 Packs (8 pills total) • Enhanced vitality support',
-            'price' => 3.95,
-            'original_price' => 4.98, // 2 × 2.49
-            'black_market_price' => 5.00,
-            'savings' => 1.03, // 4.98 - 3.95
-            'badge' => 'POPULAR',
-            'badge_color' => 'convert-orange',
-            'free_shipping' => false
-        ),
-        1 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 5,
-            'pills_total' => 20,
-            'title' => 'Viagra – Buy 5 Packs',
-            'discreet_title' => 'Viagra (5 Packs)',
-            'description' => '5 Packs (20 pills total) • Free shipping included',
-            'price' => 4.95,
-            'original_price' => 12.45, // 5 × 2.49
-            'black_market_price' => 13.00,
-            'savings' => 7.50, // 12.45 - 4.95
-            'badge' => 'BEST VALUE',
-            'badge_color' => 'medical-blue',
-            'free_shipping' => true
-        ),
-        2 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 10,
-            'pills_total' => 40,
-            'title' => 'Viagra – Buy 10 Packs',
-            'discreet_title' => 'Viagra (10 Packs)',
-            'description' => '10 Packs (40 pills total) • Free shipping + Free Guide',
-            'price' => 6.95,
-            'original_price' => 24.90, // 10 × 2.49
-            'black_market_price' => 25.00,
-            'savings' => 17.95, // 24.90 - 6.95
-            'badge' => 'MAX SAVINGS',
-            'badge_color' => 'purple-600',
-            'free_shipping' => true
-        ),
-        3 => array(
-            'product_id' => $base_product->get_id(),
-            'quantity' => 20,
-            'pills_total' => 80,
-            'title' => 'Viagra – Buy 20 Packs',
-            'discreet_title' => 'Viagra (20 Packs)',
-            'description' => '20 Packs (80 pills total) • Free shipping + Free Guide + VIP Support',
-            'price' => 9.95,
-            'original_price' => 49.80, // 20 × 2.49
-            'black_market_price' => 50.00,
-            'savings' => 39.85, // 49.80 - 9.95
-            'badge' => 'ULTIMATE DEAL',
-            'badge_color' => 'gradient-to-r from-purple-600 to-pink-600',
-            'free_shipping' => true
-        )
-    );
+    return array();
 }
 
 // Display package information in admin order details
@@ -722,8 +656,62 @@ function fire_initiate_checkout_event() {
             num_items: <?php echo WC()->cart->get_cart_contents_count(); ?>
         });
     }
+
     </script>
     <?php
+}
+
+// FIXED: Add AJAX handler for real-time cart updates
+add_action('wp_ajax_update_cart_totals_ajax', 'handle_cart_totals_update');
+add_action('wp_ajax_nopriv_update_cart_totals_ajax', 'handle_cart_totals_update');
+function handle_cart_totals_update() {
+    // Verify nonce
+    if (!wp_verify_nonce($_POST['security'], 'update-cart-totals')) {
+        wp_send_json_error('Security check failed');
+        return;
+    }
+
+    $package_id = intval($_POST['package_id']);
+    $packages = get_order_bump_packages();
+
+    if (!isset($packages[$package_id])) {
+        wp_send_json_error('Invalid package');
+        return;
+    }
+
+    $package = $packages[$package_id];
+
+    // Clear cart and add new package
+    WC()->cart->empty_cart();
+    $cart_item_key = WC()->cart->add_to_cart($package['product_id'], $package['quantity']);
+
+    if ($cart_item_key) {
+        // Set custom price
+        add_action('woocommerce_before_calculate_totals', function($cart) use ($package) {
+            if (is_admin() && !defined('DOING_AJAX')) return;
+            foreach ($cart->get_cart() as $cart_item) {
+                $per_item_price = $package['price'] / $package['quantity'];
+                $cart_item['data']->set_price($per_item_price);
+            }
+        }, 10, 1);
+
+        // Calculate totals
+        WC()->cart->calculate_totals();
+
+        // Store package data in session
+        WC()->session->set('selected_package_id', $package_id);
+        WC()->session->set('selected_package_data', $package);
+
+        // Return updated totals
+        wp_send_json_success(array(
+            'subtotal' => number_format($package['price'], 2),
+            'shipping' => '0.00',
+            'total' => number_format($package['price'], 2),
+            'package' => $package
+        ));
+    } else {
+        wp_send_json_error('Failed to add package to cart');
+    }
 }
 
 // AddToCart - Fire using WooCommerce native hook
