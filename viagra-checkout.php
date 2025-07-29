@@ -1209,6 +1209,21 @@ echo $head;
             box-shadow: none;
         }
 
+        .mollie-component-group {
+            margin-bottom: 1rem;
+        }
+
+        .mollie-component-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .mollie-component-half {
+            flex: 1;
+            margin-bottom: 0 !important;
+        }
+
         .mollie-component {
             border: 2px solid #e2e8f0;
             border-radius: 8px;
@@ -1218,7 +1233,6 @@ echo $head;
             display: flex;
             align-items: center;
             transition: all 0.3s ease;
-            margin-bottom: 1rem;
         }
 
         .mollie-component:hover {
@@ -1246,20 +1260,7 @@ echo $head;
             background: transparent !important;
         }
 
-        #cardHolder, #cardNumber {
-            margin-bottom: 1rem;
-        }
 
-        #expiryDate, #verificationCode {
-            width: calc(50% - 8px);
-            display: inline-block;
-            vertical-align: top;
-            margin-bottom: 1rem;
-        }
-
-        #expiryDate {
-            margin-right: 16px;
-        }
 
         .cardToken {
             display: none;
@@ -1276,11 +1277,15 @@ echo $head;
         }
 
         /* Mobile responsive for Mollie */
-        @media (max-width: 480px) {
-            #expiryDate, #verificationCode {
-                width: 100%;
-                margin-right: 0;
-                margin-bottom: 1rem;
+        @media (max-width: 640px) {
+            .mollie-component-row {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .mollie-component-half {
+                flex: none;
+                margin-bottom: 1rem !important;
             }
         }
     </style>
@@ -1723,21 +1728,23 @@ echo $head;
                                         // Render custom Mollie Components form for credit card
                                         if (strpos($gateway_id, 'mollie') !== false && strpos($gateway_id, 'creditcard') !== false) {
                                             echo '<div class="mollie-components">';
-                                            echo '<div id="mobile-cardHolder">';
+                                            echo '<div class="mollie-component-group">';
                                             echo '<label class="mollie-component-label">Cardholder Name</label>';
-                                            echo '<div class="mollie-component mollie-component--cardHolder"></div>';
+                                            echo '<div id="mobile-cardHolder" class="mollie-component mollie-component--cardHolder"></div>';
                                             echo '</div>';
-                                            echo '<div id="mobile-cardNumber">';
+                                            echo '<div class="mollie-component-group">';
                                             echo '<label class="mollie-component-label">Card Number</label>';
-                                            echo '<div class="mollie-component mollie-component--cardNumber"></div>';
+                                            echo '<div id="mobile-cardNumber" class="mollie-component mollie-component--cardNumber"></div>';
                                             echo '</div>';
-                                            echo '<div id="mobile-expiryDate">';
+                                            echo '<div class="mollie-component-row">';
+                                            echo '<div class="mollie-component-group mollie-component-half">';
                                             echo '<label class="mollie-component-label">Expiry Date</label>';
-                                            echo '<div class="mollie-component mollie-component--expiryDate"></div>';
+                                            echo '<div id="mobile-expiryDate" class="mollie-component mollie-component--expiryDate"></div>';
                                             echo '</div>';
-                                            echo '<div id="mobile-verificationCode">';
+                                            echo '<div class="mollie-component-group mollie-component-half">';
                                             echo '<label class="mollie-component-label">CVC</label>';
-                                            echo '<div class="mollie-component mollie-component--verificationCode"></div>';
+                                            echo '<div id="mobile-verificationCode" class="mollie-component mollie-component--verificationCode"></div>';
+                                            echo '</div>';
                                             echo '</div>';
                                             echo '<input type="hidden" name="cardToken" class="cardToken" />';
                                             echo '</div>';
@@ -2410,21 +2417,23 @@ echo $head;
                                                         // Render custom Mollie Components form for credit card
                                                         if (strpos($gateway_id, 'mollie') !== false && strpos($gateway_id, 'creditcard') !== false) {
                                                             echo '<div class="mollie-components">';
-                                                            echo '<div id="cardHolder">';
+                                                            echo '<div class="mollie-component-group">';
                                                             echo '<label class="mollie-component-label">Cardholder Name</label>';
-                                                            echo '<div class="mollie-component mollie-component--cardHolder"></div>';
+                                                            echo '<div id="desktop-cardHolder" class="mollie-component mollie-component--cardHolder"></div>';
                                                             echo '</div>';
-                                                            echo '<div id="cardNumber">';
+                                                            echo '<div class="mollie-component-group">';
                                                             echo '<label class="mollie-component-label">Card Number</label>';
-                                                            echo '<div class="mollie-component mollie-component--cardNumber"></div>';
+                                                            echo '<div id="desktop-cardNumber" class="mollie-component mollie-component--cardNumber"></div>';
                                                             echo '</div>';
-                                                            echo '<div id="expiryDate">';
+                                                            echo '<div class="mollie-component-row">';
+                                                            echo '<div class="mollie-component-group mollie-component-half">';
                                                             echo '<label class="mollie-component-label">Expiry Date</label>';
-                                                            echo '<div class="mollie-component mollie-component--expiryDate"></div>';
+                                                            echo '<div id="desktop-expiryDate" class="mollie-component mollie-component--expiryDate"></div>';
                                                             echo '</div>';
-                                                            echo '<div id="verificationCode">';
+                                                            echo '<div class="mollie-component-group mollie-component-half">';
                                                             echo '<label class="mollie-component-label">CVC</label>';
-                                                            echo '<div class="mollie-component mollie-component--verificationCode"></div>';
+                                                            echo '<div id="desktop-verificationCode" class="mollie-component mollie-component--verificationCode"></div>';
+                                                            echo '</div>';
                                                             echo '</div>';
                                                             echo '<input type="hidden" name="cardToken" class="cardToken" />';
                                                             echo '</div>';
@@ -2585,42 +2594,41 @@ echo $head;
                 });
 
                 // Check which components need to be mounted
-                const desktopContainer = document.querySelector('#cardHolder .mollie-component--cardHolder');
-                const mobileContainer = document.querySelector('#mobile-cardHolder .mollie-component--cardHolder');
+                const desktopContainer = document.querySelector('#desktop-cardHolder');
+                const mobileContainer = document.querySelector('#mobile-cardHolder');
 
                 // Desktop components - only if container exists and is visible
                 if (desktopContainer && desktopContainer.offsetParent !== null) {
                     console.log('Mounting desktop Mollie components');
                     
-                    mollieComponents.cardHolder = mollieInstance.createComponent('cardHolder');
-                    mollieComponents.cardHolder.mount('#cardHolder .mollie-component--cardHolder');
+                    mollieComponents.desktopCardHolder = mollieInstance.createComponent('cardHolder');
+                    mollieComponents.desktopCardHolder.mount('#desktop-cardHolder');
 
-                    mollieComponents.cardNumber = mollieInstance.createComponent('cardNumber');
-                    mollieComponents.cardNumber.mount('#cardNumber .mollie-component--cardNumber');
+                    mollieComponents.desktopCardNumber = mollieInstance.createComponent('cardNumber');
+                    mollieComponents.desktopCardNumber.mount('#desktop-cardNumber');
 
-                    mollieComponents.expiryDate = mollieInstance.createComponent('expiryDate');
-                    mollieComponents.expiryDate.mount('#expiryDate .mollie-component--expiryDate');
+                    mollieComponents.desktopExpiryDate = mollieInstance.createComponent('expiryDate');
+                    mollieComponents.desktopExpiryDate.mount('#desktop-expiryDate');
 
-                    mollieComponents.verificationCode = mollieInstance.createComponent('verificationCode');
-                    mollieComponents.verificationCode.mount('#verificationCode .mollie-component--verificationCode');
+                    mollieComponents.desktopVerificationCode = mollieInstance.createComponent('verificationCode');
+                    mollieComponents.desktopVerificationCode.mount('#desktop-verificationCode');
                 }
 
                 // Mobile components - only if container exists and is visible
                 if (mobileContainer && mobileContainer.offsetParent !== null) {
                     console.log('Mounting mobile Mollie components');
                     
-                    // Use different component instances for mobile
                     mollieComponents.mobileCardHolder = mollieInstance.createComponent('cardHolder');
-                    mollieComponents.mobileCardHolder.mount('#mobile-cardHolder .mollie-component--cardHolder');
+                    mollieComponents.mobileCardHolder.mount('#mobile-cardHolder');
 
                     mollieComponents.mobileCardNumber = mollieInstance.createComponent('cardNumber');
-                    mollieComponents.mobileCardNumber.mount('#mobile-cardNumber .mollie-component--cardNumber');
+                    mollieComponents.mobileCardNumber.mount('#mobile-cardNumber');
 
                     mollieComponents.mobileExpiryDate = mollieInstance.createComponent('expiryDate');
-                    mollieComponents.mobileExpiryDate.mount('#mobile-expiryDate .mollie-component--expiryDate');
+                    mollieComponents.mobileExpiryDate.mount('#mobile-expiryDate');
 
                     mollieComponents.mobileVerificationCode = mollieInstance.createComponent('verificationCode');
-                    mollieComponents.mobileVerificationCode.mount('#mobile-verificationCode .mollie-component--verificationCode');
+                    mollieComponents.mobileVerificationCode.mount('#mobile-verificationCode');
                 }
 
                 console.log('Mollie Components initialized successfully');
